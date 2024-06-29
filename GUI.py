@@ -42,6 +42,14 @@ def create_graph():
         if temperature == 'auto':
             temperature = parse_temperature_from_filename(file_path)
         
+        x_min = float(x_min_var.get())
+        x_max = float(x_max_var.get())
+        y_min = y_min_var.get()
+        y_max = y_max_var.get()
+        
+        x_bounds = (x_min, x_max)
+        y_bounds = (float(y_min), float(y_max)) if y_min and y_max else None
+        
         update_status("Loading Excel data...")
         channel_data, mass, temp_auto = load_excel_data(file_path)
         update_status("Processing data...")
@@ -50,7 +58,7 @@ def create_graph():
         temp = temperature if temperature != 'auto' else temp_auto
         
         update_status("Creating CV graph...")
-        create_cv_graph(cycle_data, temp, scan_rate, cycle_list, color_palette, output_directory)
+        create_cv_graph(cycle_data, temp, scan_rate, cycle_list, color_palette, output_directory, x_bounds, y_bounds)
         update_status(f"Graph saved successfully to {output_directory}")
         
         # Open the graph in the default image viewer
@@ -114,11 +122,29 @@ tk.Label(root, text="Temperature:").grid(row=5, column=0, padx=10, pady=5, stick
 temp_var = tk.StringVar(value="auto")
 tk.Entry(root, textvariable=temp_var).grid(row=5, column=1, padx=10, pady=5)
 
+# X axis bounds input
+tk.Label(root, text="X Axis Min:").grid(row=6, column=0, padx=10, pady=5, sticky=tk.W)
+x_min_var = tk.StringVar(value="0")
+tk.Entry(root, textvariable=x_min_var).grid(row=6, column=1, padx=10, pady=5)
+
+tk.Label(root, text="X Axis Max:").grid(row=7, column=0, padx=10, pady=5, sticky=tk.W)
+x_max_var = tk.StringVar(value="1.8")
+tk.Entry(root, textvariable=x_max_var).grid(row=7, column=1, padx=10, pady=5)
+
+# Y axis bounds input
+tk.Label(root, text="Y Axis Min (optional):").grid(row=8, column=0, padx=10, pady=5, sticky=tk.W)
+y_min_var = tk.StringVar(value="")
+tk.Entry(root, textvariable=y_min_var).grid(row=8, column=1, padx=10, pady=5)
+
+tk.Label(root, text="Y Axis Max (optional):").grid(row=9, column=0, padx=10, pady=5, sticky=tk.W)
+y_max_var = tk.StringVar(value="")
+tk.Entry(root, textvariable=y_max_var).grid(row=9, column=1, padx=10, pady=5)
+
 # Create graph button
-tk.Button(root, text="Create Graph", command=create_graph).grid(row=6, column=1, pady=20)
+tk.Button(root, text="Create Graph", command=create_graph).grid(row=10, column=1, pady=20)
 
 # Status label
 status_label = tk.Label(root, text="")
-status_label.grid(row=7, column=0, columnspan=3, pady=10)
+status_label.grid(row=11, column=0, columnspan=3, pady=10)
 
 root.mainloop()

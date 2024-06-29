@@ -4,7 +4,7 @@ import matplotlib.font_manager as fm
 import os
 import matplotlib.ticker as ticker
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, output_dir):
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, output_dir, x_bounds=(0, 1.8), y_bounds=None):
     print(f"Creating CV graphs for temperature: {temperature}")
     
     palettes = {
@@ -49,10 +49,16 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     if temperature != 'auto':
         plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=18, fontweight='bold', fontproperties=prop, horizontalalignment='right')
 
-    plt.xlim([0, 1.8])
-    plt.xticks([i * 0.2 for i in range(10)])
+    # Apply axis bounds
+    plt.xlim(x_bounds)
+    if y_bounds:
+        plt.ylim(y_bounds)
+
+    # Add major and minor ticks
+    plt.gca().xaxis.set_major_locator(ticker.MultipleLocator(0.2))
     plt.gca().xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
-    plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(0.2))
+    plt.gca().yaxis.set_major_locator(ticker.MultipleLocator(50))
+    plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(25))
 
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 
