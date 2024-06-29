@@ -52,14 +52,12 @@ def create_graph():
         y_min = y_min_var.get() if y_min_var.get() != 'auto' else config['DEFAULT']['YAxisMin']
         y_max = y_max_var.get() if y_max_var.get() != 'auto' else config['DEFAULT']['YAxisMax']
         show_grid = grid_var.get()
-        use_bold_font = bold_var.get()
         
         config['DEFAULT']['XAxisMin'] = x_min
         config['DEFAULT']['XAxisMax'] = x_max
         config['DEFAULT']['YAxisMin'] = y_min
         config['DEFAULT']['YAxisMax'] = y_max
         config['DEFAULT']['ShowGrid'] = str(show_grid)
-        config['DEFAULT']['UseBoldFont'] = str(use_bold_font)
         
         output_directory = output_dir.get()
         config['DEFAULT']['OutputDirectory'] = output_directory
@@ -164,11 +162,6 @@ tk.Entry(root, textvariable=y_max_var).grid(row=9, column=1, padx=10, pady=5)
 grid_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('ShowGrid'))
 grid_checkbox = tk.Checkbutton(root, text="Show Gridlines", variable=grid_var)
 grid_checkbox.grid(row=10, column=0, padx=10, pady=5)
-
-# Font bold option
-bold_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('UseBoldFont'))
-bold_checkbox = tk.Checkbutton(root, text="Bold Font", variable=bold_var)
-bold_checkbox.grid(row=10, column=1, padx=10, pady=5)
 
 # Create graph button
 tk.Button(root, text="Create Graph", command=create_graph).grid(row=11, column=1, pady=20)

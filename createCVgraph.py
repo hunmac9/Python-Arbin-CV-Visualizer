@@ -9,9 +9,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     config = configparser.ConfigParser()
     config.read(config_file)
     
-    font_bold_file = config['DEFAULT']['FontBoldFile']
-    font_regular_file = config['DEFAULT']['FontRegularFile']
-    use_bold_font = config['DEFAULT'].getboolean('UseBoldFont')
+    font_family = config['DEFAULT']['FontFamily']
     font_size = int(config['DEFAULT']['FontSize'])
     tick_font_size = int(config['DEFAULT']['TickFontSize'])
     legend_font_size = int(config['DEFAULT']['LegendFontSize'])
@@ -36,13 +34,11 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     colors = cycle(palettes[color_palette])
 
-    # Load the custom font with bold option
-    font_file = font_bold_file if use_bold_font else font_regular_file
-    font_path = os.path.join(os.path.dirname(__file__), font_file)
-    
-    prop = fm.FontProperties(fname=font_path, size=font_size)
-    tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-    legend_prop = fm.FontProperties(fname=font_path, size=legend_font_size)
+    # Load the Arial font
+    prop_bold = fm.FontProperties(family=font_family, size=font_size, weight='bold')
+    prop_regular = fm.FontProperties(family=font_family, size=font_size)
+    tick_prop = fm.FontProperties(family=font_family, size=tick_font_size)
+    legend_prop = fm.FontProperties(family=font_family, size=legend_font_size, weight='bold')
 
     pixel_width, pixel_height = 6432, 4923
     fig_ratio = pixel_width / pixel_height
@@ -60,18 +56,18 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
         else:
             print(f"Cycle {cycle_index} not found in data.")
 
-    plt.xlabel('Potential / V', fontsize=font_size, fontproperties=prop)
-    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=font_size, fontproperties=prop)
+    plt.xlabel('Potential / V', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
+    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
 
     plt.xticks(fontsize=tick_font_size, fontproperties=tick_prop)
     plt.yticks(fontsize=tick_font_size, fontproperties=tick_prop)
 
     plt.legend(loc='upper left', prop=legend_prop, frameon=False)
 
-    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop)
+    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold)
 
     if temperature != 'auto':
-        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop, horizontalalignment='right')
+        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
 
     # Apply axis bounds
     plt.xlim(x_bounds)
