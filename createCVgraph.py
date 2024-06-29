@@ -28,7 +28,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     palettes = {
         'Default': ['#1b2c2d', '#083c40', '#266E70', '#3C8D8E', '#5BB8BD', '#7DE4E6'],
         'Palette 1': ['#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087', '#f95d6a'],
-        'Palette 2': ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429'],
+        'Palette 2': ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429', '#fff000'],
         'Palette 3': ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
     }
 
@@ -57,7 +57,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
             print(f"Cycle {cycle_index} not found in data.")
 
     plt.xlabel('Potential / V', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
-    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
+    plt.ylabel(r'Current Density / mA g$^{\mathbf{-1}}$', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
 
     plt.xticks(fontsize=tick_font_size, fontproperties=tick_prop)
     plt.yticks(fontsize=tick_font_size, fontproperties=tick_prop)
