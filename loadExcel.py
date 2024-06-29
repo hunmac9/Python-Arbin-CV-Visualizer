@@ -9,14 +9,18 @@ def parse_temperature_from_filename(file_path):
         temperature = 'Unknown'
     return temperature
 
-def load_excel_data(file_path, channel_sheet='Channel_4_1', global_info_sheet='Global_Info'):
+def load_excel_data(file_path):
     print(f"Loading Excel file: {file_path}")
     xls = pd.ExcelFile(file_path)
     
+    # Dynamically determine the channel sheet name
+    channel_sheet = xls.sheet_names[1]
     print(f"Loading sheet: {channel_sheet}")
+    
     channel_data = pd.read_excel(xls, sheet_name=channel_sheet)
     print(f"Channel data loaded: {channel_data.shape}")
     
+    global_info_sheet = xls.sheet_names[0]
     print(f"Loading sheet: {global_info_sheet}")
     global_info = pd.read_excel(xls, sheet_name=global_info_sheet, header=None)
     print(f"Global_Info data loaded: {global_info.shape}")
@@ -24,11 +28,9 @@ def load_excel_data(file_path, channel_sheet='Channel_4_1', global_info_sheet='G
     # Debug: Print the full contents of the global_info DataFrame
     print("Global_Info sheet full contents:\n", global_info)
     
-    # Directly access specific cells H4 and H5
     try:
-        mass_label = global_info.iloc[3, 7]  # Cell H4 (4th row, 8th column)
+        # Directly access specific cells H4 and H5
         mass_value = global_info.iloc[4, 7]  # Cell H5 (5th row, 8th column)
-        print(f"Extracted mass label: {mass_label}")
         print(f"Extracted mass value: {mass_value}")
         
         if not isinstance(mass_value, (int, float)):

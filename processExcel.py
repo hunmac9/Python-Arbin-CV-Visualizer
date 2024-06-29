@@ -5,7 +5,7 @@ def process_data(channel_data, mass):
     cycle_data = {}
 
     for i, row in channel_data.iterrows():
-        cycle_index = row['Cycle_Index']  # Assuming Cycle_Index is the correct column name
+        cycle_index = int(row['Cycle_Index'])  # Ensure Cycle_Index is an integer
 
         if cycle_index not in cycle_data:
             cycle_data[cycle_index] = {
