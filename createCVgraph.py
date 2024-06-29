@@ -64,10 +64,10 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     plt.legend(loc='upper left', prop=legend_prop, frameon=False)
 
-    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold)
+    plt.text(0.03, 0.03, f'${scan_rate} \\mathrm{{mV}} \\ \\mathrm{{s}}^{{-1}}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold)
 
     if temperature != 'auto':
-        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
+        plt.text(0.97, 0.03, f'{temperature}', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
 
     # Apply axis bounds
     plt.xlim(x_bounds)
