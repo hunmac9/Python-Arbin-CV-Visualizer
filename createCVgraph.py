@@ -3,8 +3,28 @@ from itertools import cycle
 import matplotlib.font_manager as fm
 import os
 import matplotlib.ticker as ticker
+import configparser
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, output_dir, x_bounds=(0, 1.8), y_bounds=None, show_grid=False):
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, config_file):
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    
+    font_bold_file = config['DEFAULT']['FontBoldFile']
+    font_regular_file = config['DEFAULT']['FontRegularFile']
+    use_bold_font = config['DEFAULT'].getboolean('UseBoldFont')
+    font_size = int(config['DEFAULT']['FontSize'])
+    tick_font_size = int(config['DEFAULT']['TickFontSize'])
+    legend_font_size = int(config['DEFAULT']['LegendFontSize'])
+    x_min = float(config['DEFAULT']['XAxisMin'])
+    x_max = float(config['DEFAULT']['XAxisMax'])
+    y_min = config['DEFAULT']['YAxisMin']
+    y_max = config['DEFAULT']['YAxisMax']
+    show_grid = config['DEFAULT'].getboolean('ShowGrid')
+    output_dir = config['DEFAULT']['OutputDirectory']
+
+    y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
+    x_bounds = (x_min, x_max)
+
     print(f"Creating CV graphs for temperature: {temperature}")
 
     palettes = {
@@ -16,9 +36,13 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     colors = cycle(palettes[color_palette])
 
-    # Load the custom font
-    font_path = os.path.join(os.path.dirname(__file__), 'ArialNova-Bold.ttf')
-    prop = fm.FontProperties(fname=font_path, size=22, weight='bold')
+    # Load the custom font with bold option
+    font_file = font_bold_file if use_bold_font else font_regular_file
+    font_path = os.path.join(os.path.dirname(__file__), font_file)
+    
+    prop = fm.FontProperties(fname=font_path, size=font_size)
+    tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+    legend_prop = fm.FontProperties(fname=font_path, size=legend_font_size)
 
     pixel_width, pixel_height = 6432, 4923
     fig_ratio = pixel_width / pixel_height
@@ -36,18 +60,18 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
         else:
             print(f"Cycle {cycle_index} not found in data.")
 
-    plt.xlabel('Potential / V', fontsize=26, fontweight='bold', fontproperties=prop)
-    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=26, fontweight='bold', fontproperties=prop)
+    plt.xlabel('Potential / V', fontsize=font_size, fontproperties=prop)
+    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=font_size, fontproperties=prop)
 
-    plt.xticks(fontsize=20, fontproperties=prop)
-    plt.yticks(fontsize=20, fontproperties=prop)
+    plt.xticks(fontsize=tick_font_size, fontproperties=tick_prop)
+    plt.yticks(fontsize=tick_font_size, fontproperties=tick_prop)
 
-    plt.legend(loc='upper left', prop=fm.FontProperties(fname=font_path, size=22))
+    plt.legend(loc='upper left', prop=legend_prop, frameon=False)
 
-    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=22, fontweight='bold', fontproperties=prop)
+    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop)
 
     if temperature != 'auto':
-        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=22, fontweight='bold', fontproperties=prop, horizontalalignment='right')
+        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop, horizontalalignment='right')
 
     # Apply axis bounds
     plt.xlim(x_bounds)
@@ -60,7 +84,10 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     plt.gca().yaxis.set_major_locator(ticker.MultipleLocator(50))
     plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(25))
 
-    plt.grid(show_grid, which='both', linestyle='--', linewidth=0.5)
+    if show_grid:
+        plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    else:
+        plt.grid(False)
 
     plt.tight_layout()
 

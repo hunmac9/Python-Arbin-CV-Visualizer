@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 import logging
+import configparser
 from loadExcel import load_excel_data, parse_temperature_from_filename
 from processExcel import process_data
 from createCVgraph import create_cv_graph
@@ -9,6 +10,8 @@ import webbrowser
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+config_file = 'config.ini'
 
 def update_status(message):
     logging.info(message)
@@ -30,7 +33,6 @@ def create_graph():
         update_status("Starting graph creation...")
         
         file_path = data_path.get()
-        output_directory = output_dir.get()
         color_palette = palette_var.get()
         
         cycle_range = cycles_var.get()
@@ -42,16 +44,29 @@ def create_graph():
         if temperature == 'auto':
             temperature = parse_temperature_from_filename(file_path)
         
-        x_min = x_min_var.get()
-        x_max = x_max_var.get()
-        y_min = y_min_var.get()
-        y_max = y_max_var.get()
+        config = configparser.ConfigParser()
+        config.read(config_file)
         
-        x_bounds = (float(x_min), float(x_max)) if x_min != 'auto' and x_max != 'auto' else (0, 1.8)
-        y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
-        
+        x_min = x_min_var.get() if x_min_var.get() != 'auto' else config['DEFAULT']['XAxisMin']
+        x_max = x_max_var.get() if x_max_var.get() != 'auto' else config['DEFAULT']['XAxisMax']
+        y_min = y_min_var.get() if y_min_var.get() != 'auto' else config['DEFAULT']['YAxisMin']
+        y_max = y_max_var.get() if y_max_var.get() != 'auto' else config['DEFAULT']['YAxisMax']
         show_grid = grid_var.get()
+        use_bold_font = bold_var.get()
         
+        config['DEFAULT']['XAxisMin'] = x_min
+        config['DEFAULT']['XAxisMax'] = x_max
+        config['DEFAULT']['YAxisMin'] = y_min
+        config['DEFAULT']['YAxisMax'] = y_max
+        config['DEFAULT']['ShowGrid'] = str(show_grid)
+        config['DEFAULT']['UseBoldFont'] = str(use_bold_font)
+        
+        output_directory = output_dir.get()
+        config['DEFAULT']['OutputDirectory'] = output_directory
+        
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+
         update_status("Loading Excel data...")
         channel_data, mass, temp_auto = load_excel_data(file_path)
         update_status("Processing data...")
@@ -60,7 +75,7 @@ def create_graph():
         temp = temperature if temperature != 'auto' else temp_auto
         
         update_status("Creating CV graph...")
-        create_cv_graph(cycle_data, temp, scan_rate, cycle_list, color_palette, output_directory, x_bounds, y_bounds, show_grid)
+        create_cv_graph(cycle_data, temp, scan_rate, cycle_list, color_palette, config_file)
         update_status(f"Graph saved successfully to {output_directory}")
         
         # Open the graph in the default image viewer
@@ -86,6 +101,9 @@ def browse_dir():
 root = tk.Tk()
 root.title("CV Graph Generator")
 
+config = configparser.ConfigParser()
+config.read(config_file)
+
 # Data file path selection
 tk.Label(root, text="Select data file:").grid(row=0, column=0, padx=10, pady=5, sticky=tk.W)
 data_path = tk.StringVar()
@@ -94,7 +112,7 @@ tk.Button(root, text="Browse", command=browse_file).grid(row=0, column=2, padx=1
 
 # Output directory selection
 tk.Label(root, text="Output directory:").grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
-output_dir = tk.StringVar(value='/Users/hunmac/Python-CV-Visualizer/processedData')
+output_dir = tk.StringVar(value=config['DEFAULT']['OutputDirectory'])
 tk.Entry(root, textvariable=output_dir, width=50).grid(row=1, column=1, padx=10, pady=5)
 tk.Button(root, text="Browse", command=browse_dir).grid(row=1, column=2, padx=10, pady=5)
 
@@ -126,26 +144,31 @@ tk.Entry(root, textvariable=temp_var).grid(row=5, column=1, padx=10, pady=5)
 
 # X axis bounds input
 tk.Label(root, text="X Axis Min:").grid(row=6, column=0, padx=10, pady=5, sticky=tk.W)
-x_min_var = tk.StringVar(value="0")
+x_min_var = tk.StringVar(value=config['DEFAULT']['XAxisMin'])
 tk.Entry(root, textvariable=x_min_var).grid(row=6, column=1, padx=10, pady=5)
 
 tk.Label(root, text="X Axis Max:").grid(row=7, column=0, padx=10, pady=5, sticky=tk.W)
-x_max_var = tk.StringVar(value="1.8")
+x_max_var = tk.StringVar(value=config['DEFAULT']['XAxisMax'])
 tk.Entry(root, textvariable=x_max_var).grid(row=7, column=1, padx=10, pady=5)
 
 # Y axis bounds input
 tk.Label(root, text="Y Axis Min:").grid(row=8, column=0, padx=10, pady=5, sticky=tk.W)
-y_min_var = tk.StringVar(value="auto")
+y_min_var = tk.StringVar(value=config['DEFAULT']['YAxisMin'])
 tk.Entry(root, textvariable=y_min_var).grid(row=8, column=1, padx=10, pady=5)
 
 tk.Label(root, text="Y Axis Max:").grid(row=9, column=0, padx=10, pady=5, sticky=tk.W)
-y_max_var = tk.StringVar(value="auto")
+y_max_var = tk.StringVar(value=config['DEFAULT']['YAxisMax'])
 tk.Entry(root, textvariable=y_max_var).grid(row=9, column=1, padx=10, pady=5)
 
 # Gridlines option
-grid_var = tk.BooleanVar()
+grid_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('ShowGrid'))
 grid_checkbox = tk.Checkbutton(root, text="Show Gridlines", variable=grid_var)
 grid_checkbox.grid(row=10, column=0, padx=10, pady=5)
+
+# Font bold option
+bold_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('UseBoldFont'))
+bold_checkbox = tk.Checkbutton(root, text="Bold Font", variable=bold_var)
+bold_checkbox.grid(row=10, column=1, padx=10, pady=5)
 
 # Create graph button
 tk.Button(root, text="Create Graph", command=create_graph).grid(row=11, column=1, pady=20)
