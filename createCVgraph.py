@@ -4,9 +4,9 @@ import matplotlib.font_manager as fm
 import os
 import matplotlib.ticker as ticker
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, output_dir, x_bounds=(0, 1.8), y_bounds=None):
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, output_dir, x_bounds=(0, 1.8), y_bounds=None, show_grid=False):
     print(f"Creating CV graphs for temperature: {temperature}")
-    
+
     palettes = {
         'Default': ['#1b2c2d', '#083c40', '#266E70', '#3C8D8E', '#5BB8BD', '#7DE4E6'],
         'Palette 1': ['#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087', '#f95d6a'],
@@ -17,8 +17,8 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     colors = cycle(palettes[color_palette])
 
     # Load the custom font
-    font_path = os.path.join(os.path.dirname(__file__), 'artrbdo.ttf')
-    prop = fm.FontProperties(fname=font_path)
+    font_path = os.path.join(os.path.dirname(__file__), 'ArialNova-Bold.ttf')
+    prop = fm.FontProperties(fname=font_path, size=22, weight='bold')
 
     pixel_width, pixel_height = 6432, 4923
     fig_ratio = pixel_width / pixel_height
@@ -36,18 +36,18 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
         else:
             print(f"Cycle {cycle_index} not found in data.")
 
-    plt.xlabel('Potential / V', fontsize=20, fontweight='bold', fontproperties=prop)
-    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=20, fontweight='bold', fontproperties=prop)
+    plt.xlabel('Potential / V', fontsize=26, fontweight='bold', fontproperties=prop)
+    plt.ylabel('Current Density / mA g$^{-1}$', fontsize=26, fontweight='bold', fontproperties=prop)
 
-    plt.xticks(fontsize=18, fontproperties=prop)
-    plt.yticks(fontsize=18, fontproperties=prop)
+    plt.xticks(fontsize=20, fontproperties=prop)
+    plt.yticks(fontsize=20, fontproperties=prop)
 
-    plt.legend(loc='upper left', prop=prop)
+    plt.legend(loc='upper left', prop=fm.FontProperties(fname=font_path, size=22))
 
-    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=18, fontweight='bold', fontproperties=prop)
+    plt.text(0.03, 0.03, f'{scan_rate} mV s$^{-1}$', transform=plt.gca().transAxes, fontsize=22, fontweight='bold', fontproperties=prop)
 
     if temperature != 'auto':
-        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=18, fontweight='bold', fontproperties=prop, horizontalalignment='right')
+        plt.text(0.97, 0.03, temperature, transform=plt.gca().transAxes, fontsize=22, fontweight='bold', fontproperties=prop, horizontalalignment='right')
 
     # Apply axis bounds
     plt.xlim(x_bounds)
@@ -60,7 +60,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     plt.gca().yaxis.set_major_locator(ticker.MultipleLocator(50))
     plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(25))
 
-    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.grid(show_grid, which='both', linestyle='--', linewidth=0.5)
 
     plt.tight_layout()
 
