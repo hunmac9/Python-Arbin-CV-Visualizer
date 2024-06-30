@@ -1,11 +1,27 @@
 import pandas as pd
 import logging
+import pickle
+import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+def store_processed_data(cycle_data, filename):
+    with open(filename, 'wb') as file:
+        pickle.dump(cycle_data, file)
+    logging.info(f"Cycle data stored successfully in '{filename}'.")
+
+def load_processed_data(filename):
+    if os.path.exists(filename):
+        with open(filename, 'rb') as file:
+            cycle_data = pickle.load(file)
+        logging.info(f"Cycle data loaded successfully from '{filename}'.")
+        return cycle_data
+    else:
+        raise FileNotFoundError(f"The file '{filename}' does not exist.")
+
 def process_data(channel_data, mass, smoothing_points=8):
-    print("Processing channel data...")
+    logging.info("Processing channel data...")
 
     cycle_data = {}
 
@@ -61,6 +77,6 @@ def process_data(channel_data, mass, smoothing_points=8):
         cycle_data[cycle_index]['Smoothed Current (mA)'].append(smoothed_current)
         cycle_data[cycle_index]['Smoothed Current Density (mA g^-1)'].append(smoothed_current_density)
 
-    print("Channel data processing complete.")
+    logging.info("Channel data processing complete.")
 
     return cycle_data

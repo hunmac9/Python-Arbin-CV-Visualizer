@@ -1,11 +1,13 @@
+import os
+import pickle
+import pandas as pd
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Canvas, colorchooser
 from tkinter.scrolledtext import ScrolledText
-import os
 import logging
 import configparser
 from loadExcel import load_excel_data, parse_temperature_from_filename
-from processExcel import process_data, save_processed_data
+from processExcel import process_data, store_processed_data, load_processed_data
 from createCVgraph import create_cv_graph
 import webbrowser
 from genColors import generate_gradient_colors
@@ -13,6 +15,12 @@ from genColors import generate_gradient_colors
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 config_file = 'config.ini'
+
+# File to manage processed data
+def get_pickle_filename(file_path):
+    directory, file_name = os.path.split(file_path)
+    base_name, _ = os.path.splitext(file_name)
+    return os.path.join(directory, f"{base_name}_processed.pkl")
 
 def get_color_palettes(config_file, section='PALETTES'):
     section_started = False
@@ -88,12 +96,21 @@ def create_graph():
             with open(config_file, 'w') as configfile:
                 config.write(configfile)
 
-            update_status("Loading Excel data...")
-            channel_data, _, temp_auto = load_excel_data(file_path)
+            pickle_filename = get_pickle_filename(file_path)
 
-            update_status("Processing data...")
-            cycle_data = process_data(channel_data, mass, smoothing_points)
-            update_status("Cycle data has been loaded")           
+            if os.path.exists(pickle_filename):
+                update_status("Loading processed data from pickle...")
+                cycle_data = load_processed_data(pickle_filename)
+            else:
+                update_status("Loading Excel data...")
+                channel_data, _, temp_auto = load_excel_data(file_path)
+
+                update_status("Processing data...")
+                cycle_data = process_data(channel_data, mass, smoothing_points)
+
+                store_processed_data(cycle_data, pickle_filename)
+
+            update_status(f"Cycle data has been loaded for file: {file_path}")
 
             temp = temperature if temperature != 'auto' else temp_auto
 
@@ -114,7 +131,7 @@ def create_graph():
             create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, config_file)
             update_status(f"Graph saved successfully to {output_directory}")
 
-            output_path = f'{output_directory}/{temp}_CV-Graph.png'
+            output_path = os.path.join(output_directory, filename_template_var.get().format(temperature=temp) + ".png")
             webbrowser.open(output_path)
 
     except Exception as e:
@@ -223,7 +240,7 @@ tk.Label(root, text="Select data files:").grid(row=0, column=0, padx=10, pady=5,
 tk.Button(root, text="Manage Files", command=browse_files_popup).grid(row=0, column=1, padx=10, pady=5)
 
 selected_files_text = ScrolledText(root, height=5, width=50)
-selected_files_text.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+selected_files_text.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
 
 tk.Label(root, text="Output directory:").grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
 output_dir = tk.StringVar(value=config['DEFAULT']['outputdirectory'])
@@ -239,65 +256,65 @@ palette_combobox.bind("<<ComboboxSelected>>", update_palette_preview)
 preview_canvas = Canvas(root, width=200, height=20)
 preview_canvas.grid(row=3, column=2, padx=10, pady=5)
 
-tk.Label(root, text="Start Color:").grid(row=14, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Start Color:").grid(row=4, column=0, padx=10, pady=5, sticky=tk.W)
 start_color_var = tk.StringVar(value="#0000FF")
 start_color_entry = tk.Entry(root, textvariable=start_color_var, width=10)
 start_color_button = tk.Button(root, text="Choose...", command=choose_start_color)
 
-tk.Label(root, text="End Color:").grid(row=15, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="End Color:").grid(row=5, column=0, padx=10, pady=5, sticky=tk.W)
 end_color_var = tk.StringVar(value="#FF0000")
 end_color_entry = tk.Entry(root, textvariable=end_color_var, width=10)
 end_color_button = tk.Button(root, text="Choose...", command=choose_end_color)
 
-tk.Label(root, text="Cycles to display (e.g., 1-4,6-10):").grid(row=4, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Cycles to display (e.g., 1-4,6-10):").grid(row=6, column=0, padx=10, pady=5, sticky=tk.W)
 cycles_var = tk.StringVar(value="1-6")
-tk.Entry(root, textvariable=cycles_var).grid(row=4, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=cycles_var).grid(row=6, column=1, padx=10, pady=5)
 cycles_var.trace("w", update_palette_preview)
 
-tk.Label(root, text="Scan rate (mV/s):").grid(row=5, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Scan rate (mV/s):").grid(row=7, column=0, padx=10, pady=5, sticky=tk.W)
 scan_rate_var = tk.StringVar(value="0.2")
-tk.Entry(root, textvariable=scan_rate_var).grid(row=5, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=scan_rate_var).grid(row=7, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Temperature:").grid(row=6, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Temperature:").grid(row=8, column=0, padx=10, pady=5, sticky=tk.W)
 temp_var = tk.StringVar(value="auto")
-tk.Entry(root, textvariable=temp_var).grid(row=6, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=temp_var).grid(row=8, column=1, padx=10, pady=5)
 
-tk.Label(root, text="X Axis Min:").grid(row=7, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="X Axis Min:").grid(row=9, column=0, padx=10, pady=5, sticky=tk.W)
 x_min_var = tk.StringVar(value=config['DEFAULT']['xaxismin'])
-tk.Entry(root, textvariable=x_min_var).grid(row=7, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=x_min_var).grid(row=9, column=1, padx=10, pady=5)
 
-tk.Label(root, text="X Axis Max:").grid(row=8, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="X Axis Max:").grid(row=10, column=0, padx=10, pady=5, sticky=tk.W)
 x_max_var = tk.StringVar(value=config['DEFAULT']['xaxismax'])
-tk.Entry(root, textvariable=x_max_var).grid(row=8, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=x_max_var).grid(row=10, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Y Axis Min:").grid(row=9, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Y Axis Min:").grid(row=11, column=0, padx=10, pady=5, sticky=tk.W)
 y_min_var = tk.StringVar(value=config['DEFAULT']['yaxismin'])
-tk.Entry(root, textvariable=y_min_var).grid(row=9, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=y_min_var).grid(row=11, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Y Axis Max:").grid(row=10, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Y Axis Max:").grid(row=12, column=0, padx=10, pady=5, sticky=tk.W)
 y_max_var = tk.StringVar(value=config['DEFAULT']['yaxismax'])
-tk.Entry(root, textvariable=y_max_var).grid(row=10, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=y_max_var).grid(row=12, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Major Tick Interval:").grid(row=11, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Major Tick Interval:").grid(row=13, column=0, padx=10, pady=5, sticky=tk.W)
 major_tick_var = tk.StringVar(value=config['DEFAULT'].get('majortickinterval', '50'))
-tk.Entry(root, textvariable=major_tick_var).grid(row=11, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=major_tick_var).grid(row=13, column=1, padx=10, pady=5)
 
 grid_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('showgrid'))
 grid_checkbox = tk.Checkbutton(root, text="Show Gridlines", variable=grid_var)
-grid_checkbox.grid(row=12, column=0, padx=10, pady=5)
+grid_checkbox.grid(row=14, column=0, padx=10, pady=5)
 
-tk.Label(root, text="Filename Template:").grid(row=13, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Filename Template:").grid(row=15, column=0, padx=10, pady=5, sticky=tk.W)
 filename_template_var = tk.StringVar(value=config['DEFAULT'].get('filenametemplate', '{temperature}_CV-Graph'))
-tk.Entry(root, textvariable=filename_template_var).grid(row=13, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=filename_template_var).grid(row=15, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Smoothing Points:").grid(row=14, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Smoothing Points:").grid(row=16, column=0, padx=10, pady=5, sticky=tk.W)
 smoothing_points_var = tk.StringVar(value=config['DEFAULT']['smoothingpoints'])
-tk.Entry(root, textvariable=smoothing_points_var).grid(row=14, column=1, padx=10, pady=5)
+tk.Entry(root, textvariable=smoothing_points_var).grid(row=16, column=1, padx=10, pady=5)
 
-tk.Button(root, text="Create Graph", command=create_graph).grid(row=16, column=1, pady=20)
+tk.Button(root, text="Create Graph", command=create_graph).grid(row=17, column=1, pady=20)
 
 status_label = tk.Label(root, text="")
-status_label.grid(row=17, column=0, columnspan=3, pady=10)
+status_label.grid(row=18, column=0, columnspan=3, pady=10)
 
 update_palette_preview()
 
