@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from itertools import cycle  # Ensure cycle is imported
+from itertools import cycle
 import matplotlib.font_manager as fm
 import os
 import matplotlib.ticker as ticker
@@ -18,30 +18,28 @@ def create_unique_filename(directory, filename_template, temperature, cycle_numb
         counter += 1
     return os.path.join(directory, filename)
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    font_family = config['DEFAULT']['fontfamily']
-    font_size = int(config['DEFAULT']['fontsize'])
-    tick_font_size = int(config['DEFAULT']['tickfontsize'])
-    legend_font_size = int(config['DEFAULT']['legendfontsize'])
-    x_min = float(config['DEFAULT']['xaxismin'])
-    x_max = float(config['DEFAULT']['xaxismax'])
-    y_min = config['DEFAULT']['yaxismin']
-    y_max = config['DEFAULT']['yaxismax']
-    show_grid = config['DEFAULT'].getboolean('showgrid')
-    output_dir = config['DEFAULT']['outputdirectory']
-    filename_template = config['DEFAULT']['filenametemplate']
-    line_weight = float(config['DEFAULT']['lineweight'])
-    axis_line_weight = float(config['DEFAULT']['axislineweight'])
-    major_tick_interval = float(config['DEFAULT']['majortickinterval'])
-    minor_tick_interval = major_tick_interval / 2
-    width = float(config['DEFAULT']['width'])
-    height = float(config['DEFAULT']['height'])
-    dpi = int(config['DEFAULT']['dpi'])
-    tick_length = float(config['DEFAULT']['ticklength'])
-    tick_width = float(config['DEFAULT']['tickwidth'])
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, graph_params):
+    # Use values from graph_params
+    font_family = graph_params["font_family"]
+    font_size = graph_params["font_size"]
+    tick_font_size = graph_params["tick_font_size"]
+    legend_font_size = graph_params["legend_font_size"]
+    x_min = graph_params["x_min"]
+    x_max = graph_params["x_max"]
+    y_min = graph_params["y_min"]
+    y_max = graph_params["y_max"]
+    show_grid = graph_params["show_grid"]
+    output_dir = graph_params["output_dir"]
+    filename_template = graph_params["filename_template"]
+    line_weight = graph_params["line_weight"]
+    axis_line_weight = graph_params["axis_line_weight"]
+    major_tick_interval = graph_params["major_tick_interval"]
+    minor_tick_interval = graph_params["minor_tick_interval"]
+    width = graph_params["width"]
+    height = graph_params["height"]
+    dpi = graph_params["dpi"]
+    tick_length = graph_params["tick_length"]
+    tick_width = graph_params["tick_width"]
 
     y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
     x_bounds = (x_min, x_max)
@@ -128,31 +126,29 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     print(f"Graph saved to {output_path}")
     plt.close()
 
-def create_cv_graph_compare(cycle_data_dict, cycle_list, scan_rate, colors, config_file):
+def create_cv_graph_compare(cycle_data_dict, cycle_list, scan_rate, colors, graph_params):
     for cycle_number in cycle_list:
-        config = configparser.ConfigParser()
-        config.read(config_file)
-
-        font_family = config['DEFAULT']['fontfamily']
-        font_size = int(config['DEFAULT']['fontsize'])
-        tick_font_size = int(config['DEFAULT']['tickfontsize'])
-        legend_font_size = int(config['DEFAULT']['legendfontsize'])
-        x_min = float(config['DEFAULT']['xaxismin'])
-        x_max = float(config['DEFAULT']['xaxismax'])
-        y_min = config['DEFAULT']['yaxismin']
-        y_max = config['DEFAULT']['yaxismax']
-        show_grid = config['DEFAULT'].getboolean('showgrid')
-        output_dir = config['DEFAULT']['outputdirectory']
-        filename_template = config['DEFAULT']['filenametemplate']
-        line_weight = float(config['DEFAULT']['lineweight'])
-        axis_line_weight = float(config['DEFAULT']['axislineweight'])
-        major_tick_interval = float(config['DEFAULT']['majortickinterval'])
-        minor_tick_interval = major_tick_interval / 2
-        width = float(config['DEFAULT']['width'])
-        height = float(config['DEFAULT']['height'])
-        dpi = int(config['DEFAULT']['dpi'])
-        tick_length = float(config['DEFAULT']['ticklength'])
-        tick_width = float(config['DEFAULT']['tickwidth'])
+        # Use values from graph_params
+        font_family = graph_params["font_family"]
+        font_size = graph_params["font_size"]
+        tick_font_size = graph_params["tick_font_size"]
+        legend_font_size = graph_params["legend_font_size"]
+        x_min = graph_params["x_min"]
+        x_max = graph_params["x_max"]
+        y_min = graph_params["y_min"]
+        y_max = graph_params["y_max"]
+        show_grid = graph_params["show_grid"]
+        output_dir = graph_params["output_dir"]
+        filename_template = graph_params["filename_template"]
+        line_weight = graph_params["line_weight"]
+        axis_line_weight = graph_params["axis_line_weight"]
+        major_tick_interval = graph_params["major_tick_interval"]
+        minor_tick_interval = graph_params["minor_tick_interval"]
+        width = graph_params["width"]
+        height = graph_params["height"]
+        dpi = graph_params["dpi"]
+        tick_length = graph_params["tick_length"]
+        tick_width = graph_params["tick_width"]
 
         y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
         x_bounds = (x_min, x_max)

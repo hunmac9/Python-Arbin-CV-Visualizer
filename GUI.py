@@ -70,9 +70,20 @@ def parse_cycle_range(cycle_range):
 def create_graph():
     try:
         update_status("Starting graph creation...")
-        
+
         config = configparser.ConfigParser()
         config.read(config_file)
+
+        x_min = x_min_var.get()
+        x_max = x_max_var.get()
+        y_min = y_min_var.get()
+        y_max = y_max_var.get()
+        show_grid = grid_var.get()
+        major_tick_interval = float(major_tick_var.get())
+        minor_tick_interval = major_tick_interval / 2
+        smoothing_points = int(smoothing_points_var.get())
+        output_directory = output_dir.get()
+        filename_template = filename_template_var.get()
 
         for file_info in file_infos:
             file_path = file_info['path']
@@ -83,17 +94,6 @@ def create_graph():
 
             if temperature == 'auto':
                 temperature = parse_temperature_from_filename(file_path)
-
-            x_min = x_min_var.get() if x_min_var.get() != 'auto' else config['DEFAULT']['xaxismin']
-            x_max = x_max_var.get() if x_max_var.get() != 'auto' else config['DEFAULT']['xaxismax']
-            y_min = y_min_var.get() if y_min_var.get() != 'auto' else config['DEFAULT']['yaxismin']
-            y_max = y_max_var.get() if y_max_var.get() != 'auto' else config['DEFAULT']['yaxismax']
-            show_grid = grid_var.get()
-            major_tick_interval = float(major_tick_var.get())
-            minor_tick_interval = major_tick_interval / 2
-            smoothing_points = int(smoothing_points_var.get())
-            output_directory = output_dir.get()
-            filename_template = filename_template_var.get()
 
             pickle_filename = get_pickle_filename(file_path)
 
@@ -125,35 +125,69 @@ def create_graph():
             else:
                 colors = config['PALETTES'][color_palette].split(',')
 
+            graph_params = {
+                "font_family": config['DEFAULT']['fontfamily'],
+                "font_size": int(config['DEFAULT']['fontsize']),
+                "tick_font_size": int(config['DEFAULT']['tickfontsize']),
+                "legend_font_size": int(config['DEFAULT']['legendfontsize']),
+                "x_min": float(x_min) if x_min != "auto" else "auto",
+                "x_max": float(x_max) if x_max != "auto" else "auto",
+                "y_min": float(y_min) if y_min != "auto" else "auto",
+                "y_max": float(y_max) if y_max != "auto" else "auto",
+                "show_grid": show_grid,
+                "output_dir": output_directory,
+                "filename_template": filename_template,
+                "line_weight": float(config['DEFAULT']['lineweight']),
+                "axis_line_weight": float(config['DEFAULT']['axislineweight']),
+                "major_tick_interval": major_tick_interval,
+                "minor_tick_interval": minor_tick_interval / 2,
+                "width": float(config['DEFAULT']['width']),
+                "height": float(config['DEFAULT']['height']),
+                "dpi": int(config['DEFAULT']['dpi']),
+                "tick_length": float(config['DEFAULT']['ticklength']),
+                "tick_width": float(config['DEFAULT']['tickwidth']),
+            }
+
             update_status(f"Creating CV graph for {file_path}...")
-            create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, config_file)
+            create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, graph_params)
             update_status(f"Graph saved successfully to {output_directory}")
 
-            output_path = os.path.join(output_directory, filename_template.format(temperature=temp) + ".png")
+            filename = filename_template.format(temperature=temp) + ".png"
+            output_path = os.path.join(output_directory, filename)
             webbrowser.open(output_path)
-        
+
         update_status("All graphs created successfully.")
-    
+
     except Exception as e:
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
+
 
 def compare_cycles():
     try:
         update_status("Starting cycle comparison...")
 
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
         cycle_list = parse_cycle_range(cycles_var.get())
         cycle_data_dict = {}
+
+        x_min = x_min_var.get()
+        x_max = x_max_var.get()
+        y_min = y_min_var.get()
+        y_max = y_max_var.get()
+        show_grid = grid_var.get()
+        major_tick_interval = float(major_tick_var.get())
+        minor_tick_interval = major_tick_interval / 2
+        smoothing_points = int(smoothing_points_var.get())
+        output_directory = output_dir.get()
+        filename_template = filename_template_var.get()
 
         for file_info in file_infos:
             file_path = file_info['path']
             mass = file_info['mass']
             temperature = parse_temperature_from_filename(file_path)
-
-            config = configparser.ConfigParser()
-            config.read(config_file)
-
-            smoothing_points = int(smoothing_points_var.get())
 
             pickle_filename = get_pickle_filename(file_path)
 
@@ -166,7 +200,6 @@ def compare_cycles():
 
                 update_status("Processing data...")
                 cycle_data = process_data(channel_data, mass, smoothing_points)
-
                 store_processed_data(cycle_data, pickle_filename)
 
             cycle_data_dict[temperature] = cycle_data
@@ -189,18 +222,70 @@ def compare_cycles():
 
         scan_rate = scan_rate_var.get()
 
+        graph_params = {
+            "font_family": config['DEFAULT']['fontfamily'],
+            "font_size": int(config['DEFAULT']['fontsize']),
+            "tick_font_size": int(config['DEFAULT']['tickfontsize']),
+            "legend_font_size": int(config['DEFAULT']['legendfontsize']),
+            "x_min": float(x_min) if x_min != "auto" else "auto",
+            "x_max": float(x_max) if x_max != "auto" else "auto",
+            "y_min": float(y_min) if y_min != "auto" else "auto",
+            "y_max": float(y_max) if y_max != "auto" else "auto",
+            "show_grid": show_grid,
+            "output_dir": output_directory,
+            "filename_template": filename_template,
+            "line_weight": float(config['DEFAULT']['lineweight']),
+            "axis_line_weight": float(config['DEFAULT']['axislineweight']),
+            "major_tick_interval": major_tick_interval,
+            "minor_tick_interval": minor_tick_interval,
+            "width": float(config['DEFAULT']['width']),
+            "height": float(config['DEFAULT']['height']),
+            "dpi": int(config['DEFAULT']['dpi']),
+            "tick_length": float(config['DEFAULT']['ticklength']),
+            "tick_width": float(config['DEFAULT']['tickwidth']),
+        }
+
         update_status(f"Creating comparison graphs for cycles {cycle_list}...")
         for cycle_number in cycle_list:
-            create_cv_graph_compare(cycle_data_dict, [cycle_number], scan_rate, colors.copy(), config_file)
+            create_cv_graph_compare(cycle_data_dict, [cycle_number], scan_rate, colors.copy(), graph_params)
 
         update_status("Comparison graphs saved successfully.")
 
-        output_path = os.path.join(config['DEFAULT']['outputdirectory'], f"Comparison_Cycles_{'-'.join(map(str, cycle_list))}.png")
+        filename = f"Comparison_Cycles_{'-'.join(map(str, cycle_list))}.png"
+        output_path = os.path.join(output_directory, filename)
         webbrowser.open(output_path)
 
     except Exception as e:
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
+
+
+def update_config_file():
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    config['DEFAULT']['xaxismin'] = x_min_var.get()
+    config['DEFAULT']['xaxismax'] = x_max_var.get()
+    config['DEFAULT']['yaxismin'] = y_min_var.get()
+    config['DEFAULT']['yaxismax'] = y_max_var.get()
+    config['DEFAULT']['showgrid'] = str(grid_var.get())
+    config['DEFAULT']['majortickinterval'] = major_tick_var.get()
+    config['DEFAULT']['smoothingpoints'] = smoothing_points_var.get()
+    config['DEFAULT']['outputdirectory'] = output_dir.get()
+    config['DEFAULT']['filenametemplate'] = filename_template_var.get()
+    config['DEFAULT']['fontfamily'] = 'Arial'
+    config['DEFAULT']['fontsize'] = '38'
+    config['DEFAULT']['tickfontsize'] = '24'
+    config['DEFAULT']['legendfontsize'] = '26'
+    config['DEFAULT']['lineweight'] = '3.5'
+    config['DEFAULT']['axislineweight'] = '5.0'
+    config['DEFAULT']['width'] = '16'
+    config['DEFAULT']['height'] = '14'
+    config['DEFAULT']['dpi'] = '600'
+    config['DEFAULT']['ticklength'] = '12'
+    config['DEFAULT']['tickwidth'] = '3'
+
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
 
 
 def browse_files_popup():
