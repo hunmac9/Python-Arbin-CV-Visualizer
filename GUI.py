@@ -6,10 +6,10 @@ from tkinter import ttk, filedialog, messagebox, Canvas, colorchooser
 from tkinter.scrolledtext import ScrolledText
 import logging
 import configparser
+import webbrowser
 from loadExcel import load_excel_data, parse_temperature_from_filename
 from processExcel import process_data, store_processed_data, load_processed_data
-from createCVgraph import create_cv_graph
-import webbrowser
+from createCVgraph import create_cv_graph, create_cv_graph_compare
 from genColors import generate_gradient_colors
 
 # Set up logging
@@ -138,6 +138,70 @@ def create_graph():
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
 
+
+def compare_cycles():
+    try:
+        update_status("Starting cycle comparison...")
+
+        # Collect the data for all files
+        cycle_data_dict = {}
+        for file_info in file_infos:
+            file_path = file_info['path']
+            mass = file_info['mass']
+            temperature = parse_temperature_from_filename(file_path)
+
+            config = configparser.ConfigParser()
+            config.read(config_file)
+
+            smoothing_points = int(smoothing_points_var.get())
+
+            pickle_filename = get_pickle_filename(file_path)
+
+            if os.path.exists(pickle_filename):
+                cycle_data = load_processed_data(pickle_filename)
+            else:
+                update_status("Loading Excel data...")
+                channel_data, _, temp_auto = load_excel_data(file_path)
+
+                update_status("Processing data...")
+                cycle_data = process_data(channel_data, mass, smoothing_points)
+
+                store_processed_data(cycle_data, pickle_filename)
+
+            cycle_data_dict[temperature] = cycle_data
+            update_status(f"Cycle data has been loaded for temperature: {temperature}")
+
+        # Select which cycle to compare
+        cycle_number = int(compare_cycle_var.get())
+
+        color_palette = palette_var.get()
+        if color_palette.lower().startswith('gradient'):
+            num_temps = len(cycle_data_dict)
+            colors = config['PALETTES'][color_palette].split(',')
+            start_color = colors[0]
+            end_color = colors[1]
+            colors = generate_gradient_colors(start_color, end_color, num_temps)
+        elif color_palette.lower() == 'custom':
+            start_color = start_color_var.get()
+            end_color = end_color_var.get()
+            num_temps = len(cycle_data_dict)
+            colors = generate_gradient_colors(start_color, end_color, num_temps)
+        else:
+            colors = config['PALETTES'][color_palette].split(',')
+
+        scan_rate = scan_rate_var.get()
+
+        update_status("Creating comparison graph...")
+        create_cv_graph_compare(cycle_data_dict, cycle_number, scan_rate, colors, config_file)
+        update_status(f"Comparison graph saved successfully")
+
+        output_path = os.path.join(config['DEFAULT']['outputdirectory'], f"Comparison_Cycle{cycle_number}.png")
+        webbrowser.open(output_path)
+
+    except Exception as e:
+        update_status(f"Error: {str(e)}")
+        logging.error(str(e))
+
 def browse_files_popup():
     def add_file():
         filepaths = filedialog.askopenfilenames(filetypes=[("Excel files", "*.xlsx"), ("All Files", "*.*")])
@@ -201,10 +265,10 @@ def update_palette_preview(event=None):
         end_color = end_color_var.get()
         num_cycles = len(parse_cycle_range(cycles_var.get()))
         colors = generate_gradient_colors(start_color, end_color, num_cycles)
-        start_color_entry.grid(row=17, column=1, padx=10, pady=5)
-        start_color_button.grid(row=17, column=2, padx=10, pady=5)
-        end_color_entry.grid(row=18, column=1, padx=10, pady=5)
-        end_color_button.grid(row=18, column=2, padx=10, pady=5)
+        start_color_entry.grid(row=21, column=1, padx=10, pady=5)
+        start_color_button.grid(row=21, column=2, padx=10, pady=5)
+        end_color_entry.grid(row=22, column=1, padx=10, pady=5)
+        end_color_button.grid(row=22, column=2, padx=10, pady=5)
     else:
         colors = config['PALETTES'][color_palette].split(',')
         start_color_entry.grid_forget()
@@ -240,7 +304,7 @@ tk.Label(root, text="Select data files:").grid(row=0, column=0, padx=10, pady=5,
 tk.Button(root, text="Manage Files", command=browse_files_popup).grid(row=0, column=1, padx=10, pady=5)
 
 selected_files_text = ScrolledText(root, height=5, width=50)
-selected_files_text.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+selected_files_text.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
 tk.Label(root, text="Output directory:").grid(row=2, column=0, padx=10, pady=5, sticky=tk.W)
 output_dir = tk.StringVar(value=config['DEFAULT']['outputdirectory'])
@@ -311,10 +375,15 @@ tk.Label(root, text="Smoothing Points:").grid(row=16, column=0, padx=10, pady=5,
 smoothing_points_var = tk.StringVar(value=config['DEFAULT']['smoothingpoints'])
 tk.Entry(root, textvariable=smoothing_points_var).grid(row=16, column=1, padx=10, pady=5)
 
-tk.Button(root, text="Create Graph", command=create_graph).grid(row=17, column=1, pady=20)
+tk.Label(root, text="Cycle Number (for comparison):").grid(row=17, column=0, padx=10, pady=5, sticky=tk.W)
+compare_cycle_var = tk.StringVar(value="1")
+tk.Entry(root, textvariable=compare_cycle_var).grid(row=17, column=1, padx=10, pady=5)
+
+tk.Button(root, text="Create Graph", command=create_graph).grid(row=19, column=0, pady=20)
+tk.Button(root, text="Compare Cycles", command=compare_cycles).grid(row=19, column=1, pady=20)
 
 status_label = tk.Label(root, text="")
-status_label.grid(row=18, column=0, columnspan=3, pady=10)
+status_label.grid(row=20, column=0, columnspan=3, pady=10)
 
 update_palette_preview()
 
