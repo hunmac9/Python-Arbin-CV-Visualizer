@@ -56,6 +56,7 @@ def load_excel_data(file_path):
     temperature = parse_temperature_from_filename(file_path)
     logging.info(f"Temperature extracted: {temperature}")
 
-    print(channel_data)
+    # Add debug statement to log the first few rows of channel_data DataFrame
+    logging.debug("Channel data sample:\n" + channel_data.head().to_string())
     
     return channel_data, mass_value, temperature

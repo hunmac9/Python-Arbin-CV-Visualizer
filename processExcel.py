@@ -1,12 +1,26 @@
 import pandas as pd
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def process_data(channel_data, mass, smoothing_points=8):
     print("Processing channel data...")
+
     cycle_data = {}
 
-    for i, row in channel_data.iterrows():
-        cycle_index = int(row['Cycle_Index'])  # Ensure Cycle_Index is an integer
+    # Check if 'Cycle_Index' exists in the DataFrame
+    if 'Cycle_Index' not in channel_data.columns:
+        raise KeyError("The required column 'Cycle_Index' is missing from the data.")
 
+    for i, row in channel_data.iterrows():
+        # Ensure 'Cycle_Index' is correctly extracted
+        try:
+            cycle_index = int(row['Cycle_Index'])  # Ensure Cycle_Index is an integer
+        except ValueError:
+            raise ValueError(f"Invalid Cycle_Index value at row {i}: {row['Cycle_Index']}")
+
+        # Initialize the dictionary for this cycle_index if it doesn't exist
         if cycle_index not in cycle_data:
             cycle_data[cycle_index] = {
                 'Voltage(V)': [],
@@ -17,17 +31,25 @@ def process_data(channel_data, mass, smoothing_points=8):
                 'Smoothed Current Density (mA g^-1)': []
             }
 
-        voltage = row['Voltage(V)']  # Assuming Voltage(V) is the correct column name
-        current = row['Current(A)']  # Assuming Current(A) is the correct column name
+        # Extract relevant data
+        voltage = row.get('Voltage(V)')
+        current = row.get('Current(A)')
 
+        # Ensure that voltage and current are not missing
+        if pd.isnull(voltage) or pd.isnull(current):
+            raise ValueError(f"Missing data on row {i}: Voltage or Current")
+
+        # Convert current to mA and calculate current density
         current_ma = current * 1000
         current_density = current_ma / mass
 
+        # Append extracted values to the respective lists
         cycle_data[cycle_index]['Voltage(V)'].append(voltage)
         cycle_data[cycle_index]['Current(A)'].append(current)
         cycle_data[cycle_index]['Current (mA)'].append(current_ma)
         cycle_data[cycle_index]['Current Density (mA g^-1)'].append(current_density)
 
+        # Calculate smoothed values if required
         if smoothing_points > 0 and len(cycle_data[cycle_index]['Current (mA)']) >= smoothing_points:
             smoothed_current = sum(cycle_data[cycle_index]['Current (mA)'][-smoothing_points:]) / smoothing_points
             smoothed_current_density = sum(cycle_data[cycle_index]['Current Density (mA g^-1)'][-smoothing_points:]) / smoothing_points
@@ -35,8 +57,10 @@ def process_data(channel_data, mass, smoothing_points=8):
             smoothed_current = current_ma
             smoothed_current_density = current_density
 
+        # Append smoothed values to respective lists
         cycle_data[cycle_index]['Smoothed Current (mA)'].append(smoothed_current)
         cycle_data[cycle_index]['Smoothed Current Density (mA g^-1)'].append(smoothed_current_density)
 
     print("Channel data processing complete.")
+
     return cycle_data

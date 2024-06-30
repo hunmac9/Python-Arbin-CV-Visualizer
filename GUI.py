@@ -5,7 +5,7 @@ import os
 import logging
 import configparser
 from loadExcel import load_excel_data, parse_temperature_from_filename
-from processExcel import process_data
+from processExcel import process_data, save_processed_data
 from createCVgraph import create_cv_graph
 import webbrowser
 from genColors import generate_gradient_colors
@@ -93,6 +93,7 @@ def create_graph():
 
             update_status("Processing data...")
             cycle_data = process_data(channel_data, mass, smoothing_points)
+            update_status("Cycle data has been loaded")           
 
             temp = temperature if temperature != 'auto' else temp_auto
 
