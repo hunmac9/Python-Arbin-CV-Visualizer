@@ -16,7 +16,7 @@ from genColors import generate_gradient_colors
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 config_file = 'config.ini'
 
-MAX_PICKLE_FILE_AGE = 60 * 60  # 1 hour in seconds
+MAX_PICKLE_FILE_AGE = 3600  # 1 hour in seconds
 
 def get_pickle_filename(file_path):
     directory, file_name = os.path.split(file_path)
@@ -70,20 +70,19 @@ def parse_cycle_range(cycle_range):
 def create_graph():
     try:
         update_status("Starting graph creation...")
+        
+        config = configparser.ConfigParser()
+        config.read(config_file)
 
         for file_info in file_infos:
             file_path = file_info['path']
             mass = file_info['mass']
             cycle_list = parse_cycle_range(cycles_var.get())
-
             scan_rate = scan_rate_var.get()
             temperature = temp_var.get()
 
             if temperature == 'auto':
                 temperature = parse_temperature_from_filename(file_path)
-
-            config = configparser.ConfigParser()
-            config.read(config_file)
 
             x_min = x_min_var.get() if x_min_var.get() != 'auto' else config['DEFAULT']['xaxismin']
             x_max = x_max_var.get() if x_max_var.get() != 'auto' else config['DEFAULT']['xaxismax']
@@ -93,21 +92,8 @@ def create_graph():
             major_tick_interval = float(major_tick_var.get())
             minor_tick_interval = major_tick_interval / 2
             smoothing_points = int(smoothing_points_var.get())
-
-            config['DEFAULT']['xaxismin'] = x_min
-            config['DEFAULT']['xaxismax'] = x_max
-            config['DEFAULT']['yaxismin'] = y_min
-            config['DEFAULT']['yaxismax'] = y_max
-            config['DEFAULT']['showgrid'] = str(show_grid)
-            config['DEFAULT']['majortickinterval'] = str(major_tick_interval)
-            config['DEFAULT']['smoothingpoints'] = str(smoothing_points)
-
             output_directory = output_dir.get()
-            config['DEFAULT']['outputdirectory'] = output_directory
-            config['DEFAULT']['filenametemplate'] = filename_template_var.get()
-
-            with open(config_file, 'w') as configfile:
-                config.write(configfile)
+            filename_template = filename_template_var.get()
 
             pickle_filename = get_pickle_filename(file_path)
 
@@ -120,14 +106,13 @@ def create_graph():
 
                 update_status("Processing data...")
                 cycle_data = process_data(channel_data, mass, smoothing_points)
-
                 store_processed_data(cycle_data, pickle_filename)
 
             update_status(f"Cycle data has been loaded for file: {file_path}")
 
             temp = temperature if temperature != 'auto' else temp_auto
-
             color_palette = palette_var.get()
+
             if color_palette.lower().startswith('gradient'):
                 colors = config['PALETTES'][color_palette].split(',')
                 start_color = colors[0]
@@ -144,13 +129,14 @@ def create_graph():
             create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, config_file)
             update_status(f"Graph saved successfully to {output_directory}")
 
-            output_path = os.path.join(output_directory, filename_template_var.get().format(temperature=temp) + ".png")
+            output_path = os.path.join(output_directory, filename_template.format(temperature=temp) + ".png")
             webbrowser.open(output_path)
-
+        
+        update_status("All graphs created successfully.")
+    
     except Exception as e:
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
-
 
 def compare_cycles():
     try:
@@ -215,6 +201,7 @@ def compare_cycles():
     except Exception as e:
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
+
 
 def browse_files_popup():
     def add_file():
