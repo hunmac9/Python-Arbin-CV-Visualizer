@@ -20,7 +20,23 @@ def load_processed_data(filename):
     else:
         raise FileNotFoundError(f"The file '{filename}' does not exist.")
 
-def process_data(channel_data, mass, smoothing_points=8):
+def smooth_data(data, smoothing_points):
+    if smoothing_points <= 0 or len(data) < smoothing_points:
+        return data
+
+    smoothed_data = []
+    for i in range(len(data)):
+        if i < smoothing_points - 1:
+            # For the initial points where we don't have enough data points to smooth
+            smoothed_data.append(data[i])
+        else:
+            # Calculate the moving average for the current window
+            window = data[i - smoothing_points + 1:i + 1]
+            smoothed_value = sum(window) / smoothing_points
+            smoothed_data.append(smoothed_value)
+    return smoothed_data
+
+def process_data(channel_data, mass, smoothing_points):
     logging.info("Processing channel data...")
 
     cycle_data = {}
@@ -65,17 +81,17 @@ def process_data(channel_data, mass, smoothing_points=8):
         cycle_data[cycle_index]['Current (mA)'].append(current_ma)
         cycle_data[cycle_index]['Current Density (mA g^-1)'].append(current_density)
 
-        # Calculate smoothed values if required
-        if smoothing_points > 0 and len(cycle_data[cycle_index]['Current (mA)']) >= smoothing_points:
-            smoothed_current = sum(cycle_data[cycle_index]['Current (mA)'][-smoothing_points:]) / smoothing_points
-            smoothed_current_density = sum(cycle_data[cycle_index]['Current Density (mA g^-1)'][-smoothing_points:]) / smoothing_points
+    # Apply smoothing after all data has been collected
+    for cycle_index in cycle_data:
+        if smoothing_points > 0:
+            cycle_data[cycle_index]['Smoothed Current (mA)'] = smooth_data(cycle_data[cycle_index]['Current (mA)'], smoothing_points)
+            cycle_data[cycle_index]['Smoothed Current Density (mA g^-1)'] = smooth_data(cycle_data[cycle_index]['Current Density (mA g^-1)'], smoothing_points)
         else:
-            smoothed_current = current_ma
-            smoothed_current_density = current_density
+            cycle_data[cycle_index]['Smoothed Current (mA)'] = cycle_data[cycle_index]['Current (mA)']
+            cycle_data[cycle_index]['Smoothed Current Density (mA g^-1)'] = cycle_data[cycle_index]['Current Density (mA g^-1)']
 
-        # Append smoothed values to respective lists
-        cycle_data[cycle_index]['Smoothed Current (mA)'].append(smoothed_current)
-        cycle_data[cycle_index]['Smoothed Current Density (mA g^-1)'].append(smoothed_current_density)
+    # Store the smoothing points used for processing
+    cycle_data['smoothing_points'] = smoothing_points
 
     logging.info("Channel data processing complete.")
 

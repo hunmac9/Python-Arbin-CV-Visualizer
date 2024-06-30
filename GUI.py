@@ -23,10 +23,15 @@ def get_pickle_filename(file_path):
     base_name, _ = os.path.splitext(file_name)
     return os.path.join(directory, f"{base_name}_processed.pkl")
 
-def is_pickle_file_relevant(pickle_filename):
+def is_pickle_file_relevant(pickle_filename, smoothing_points):
     if os.path.exists(pickle_filename):
         file_age = time.time() - os.path.getmtime(pickle_filename)
-        return file_age < MAX_PICKLE_FILE_AGE
+        if file_age < MAX_PICKLE_FILE_AGE:
+            with open(pickle_filename, 'rb') as file:
+                cycle_data = pickle.load(file)
+                # Check if the stored data was processed with the current smoothing points
+                if cycle_data.get('smoothing_points') == smoothing_points:
+                    return True
     return False
 
 def remove_pickle_files(file_paths):
@@ -85,6 +90,11 @@ def create_graph():
         output_directory = output_dir.get()
         filename_template = filename_template_var.get()
 
+        # Update the config file with new smoothing points
+        config['DEFAULT']['smoothingpoints'] = str(smoothing_points)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+
         for file_info in file_infos:
             file_path = file_info['path']
             mass = file_info['mass']
@@ -97,7 +107,7 @@ def create_graph():
 
             pickle_filename = get_pickle_filename(file_path)
 
-            if is_pickle_file_relevant(pickle_filename):
+            if is_pickle_file_relevant(pickle_filename, smoothing_points):
                 update_status(f"Loading processed data from {pickle_filename}")
                 cycle_data = load_processed_data(pickle_filename)
             else:
@@ -106,6 +116,8 @@ def create_graph():
 
                 update_status("Processing data...")
                 cycle_data = process_data(channel_data, mass, smoothing_points)
+                # Store the smoothing points used for processing
+                cycle_data['smoothing_points'] = smoothing_points
                 store_processed_data(cycle_data, pickle_filename)
 
             update_status(f"Cycle data has been loaded for file: {file_path}")
@@ -162,7 +174,6 @@ def create_graph():
         update_status(f"Error: {str(e)}")
         logging.error(str(e))
 
-
 def compare_cycles():
     try:
         update_status("Starting cycle comparison...")
@@ -184,6 +195,11 @@ def compare_cycles():
         output_directory = output_dir.get()
         filename_template = filename_template_var.get()
 
+        # Update the config file with new smoothing points
+        config['DEFAULT']['smoothingpoints'] = str(smoothing_points)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+
         for file_info in file_infos:
             file_path = file_info['path']
             mass = file_info['mass']
@@ -191,7 +207,7 @@ def compare_cycles():
 
             pickle_filename = get_pickle_filename(file_path)
 
-            if is_pickle_file_relevant(pickle_filename):
+            if is_pickle_file_relevant(pickle_filename, smoothing_points):
                 update_status(f"Loading processed data from {pickle_filename}")
                 cycle_data = load_processed_data(pickle_filename)
             else:
@@ -200,6 +216,8 @@ def compare_cycles():
 
                 update_status("Processing data...")
                 cycle_data = process_data(channel_data, mass, smoothing_points)
+                # Store the smoothing points used for processing
+                cycle_data['smoothing_points'] = smoothing_points
                 store_processed_data(cycle_data, pickle_filename)
 
             cycle_data_dict[temperature] = cycle_data
@@ -465,6 +483,7 @@ tk.Entry(root, textvariable=filename_template_var).grid(row=15, column=1, padx=1
 
 tk.Label(root, text="Smoothing Points:").grid(row=16, column=0, padx=10, pady=5, sticky=tk.W)
 smoothing_points_var = tk.StringVar(value=config['DEFAULT']['smoothingpoints'])
+smoothing_points_var.trace("w", lambda *args: update_config_file())
 tk.Entry(root, textvariable=smoothing_points_var).grid(row=16, column=1, padx=10, pady=5)
 
 tk.Button(root, text="Create Graph", command=create_graph).grid(row=19, column=0, pady=20)
