@@ -481,7 +481,7 @@ tk.Label(root, text="Filename Template:").grid(row=15, column=0, padx=10, pady=5
 filename_template_var = tk.StringVar(value=config['DEFAULT'].get('filenametemplate', '{temperature}_CV-Graph'))
 tk.Entry(root, textvariable=filename_template_var).grid(row=15, column=1, padx=10, pady=5)
 
-tk.Label(root, text="Smoothing Points:").grid(row=16, column=0, padx=10, pady=5, sticky=tk.W)
+tk.Label(root, text="Points of Savitzky-Golay Filtering:").grid(row=16, column=0, padx=10, pady=5, sticky=tk.W)
 smoothing_points_var = tk.StringVar(value=config['DEFAULT']['smoothingpoints'])
 smoothing_points_var.trace("w", lambda *args: update_config_file())
 tk.Entry(root, textvariable=smoothing_points_var).grid(row=16, column=1, padx=10, pady=5)

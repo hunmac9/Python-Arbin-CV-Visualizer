@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import pickle
 import os
+from scipy.signal import savgol_filter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,18 +24,14 @@ def load_processed_data(filename):
 def smooth_data(data, smoothing_points):
     if smoothing_points <= 0 or len(data) < smoothing_points:
         return data
-
-    smoothed_data = []
-    for i in range(len(data)):
-        if i < smoothing_points - 1:
-            # For the initial points where we don't have enough data points to smooth
-            smoothed_data.append(data[i])
-        else:
-            # Calculate the moving average for the current window
-            window = data[i - smoothing_points + 1:i + 1]
-            smoothed_value = sum(window) / smoothing_points
-            smoothed_data.append(smoothed_value)
-    return smoothed_data
+    
+    # Ensure smoothing points is odd
+    if smoothing_points % 2 == 0:
+        smoothing_points += 1  # Savitzky-Golay filter requires an odd number
+    
+    # Apply Savitzky-Golay filter
+    smoothed_data = savgol_filter(data, smoothing_points, polyorder=3)  # You can adjust polyorder as needed
+    return smoothed_data.tolist()
 
 def process_data(channel_data, mass, smoothing_points):
     logging.info("Processing channel data...")
