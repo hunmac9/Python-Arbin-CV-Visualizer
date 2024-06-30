@@ -6,7 +6,7 @@ from tkinter.scrolledtext import ScrolledText
 import logging
 import configparser
 import webbrowser
-import matplotlib.pyplot as plt  # Make sure to import necessary libraries
+import time
 from loadExcel import load_excel_data, parse_temperature_from_filename
 from processExcel import process_data, store_processed_data, load_processed_data
 from createCVgraph import create_cv_graph, create_cv_graph_compare
@@ -16,10 +16,25 @@ from genColors import generate_gradient_colors
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 config_file = 'config.ini'
 
+MAX_PICKLE_FILE_AGE = 60 * 60  # 1 hour in seconds
+
 def get_pickle_filename(file_path):
     directory, file_name = os.path.split(file_path)
     base_name, _ = os.path.splitext(file_name)
     return os.path.join(directory, f"{base_name}_processed.pkl")
+
+def is_pickle_file_relevant(pickle_filename):
+    if os.path.exists(pickle_filename):
+        file_age = time.time() - os.path.getmtime(pickle_filename)
+        return file_age < MAX_PICKLE_FILE_AGE
+    return False
+
+def remove_pickle_files(file_paths):
+    for file_path in file_paths:
+        pickle_filename = get_pickle_filename(file_path)
+        if os.path.exists(pickle_filename):
+            os.remove(pickle_filename)
+            logging.info(f"Deleted pickle file: {pickle_filename}")
 
 def get_color_palettes(config_file, section='PALETTES'):
     section_started = False
@@ -96,8 +111,8 @@ def create_graph():
 
             pickle_filename = get_pickle_filename(file_path)
 
-            if os.path.exists(pickle_filename):
-                update_status("Loading processed data from pickle...")
+            if is_pickle_file_relevant(pickle_filename):
+                update_status(f"Loading processed data from {pickle_filename}")
                 cycle_data = load_processed_data(pickle_filename)
             else:
                 update_status("Loading Excel data...")
@@ -142,8 +157,8 @@ def compare_cycles():
         update_status("Starting cycle comparison...")
 
         cycle_list = parse_cycle_range(cycles_var.get())
-
         cycle_data_dict = {}
+
         for file_info in file_infos:
             file_path = file_info['path']
             mass = file_info['mass']
@@ -156,7 +171,8 @@ def compare_cycles():
 
             pickle_filename = get_pickle_filename(file_path)
 
-            if os.path.exists(pickle_filename):
+            if is_pickle_file_relevant(pickle_filename):
+                update_status(f"Loading processed data from {pickle_filename}")
                 cycle_data = load_processed_data(pickle_filename)
             else:
                 update_status("Loading Excel data...")
@@ -189,7 +205,7 @@ def compare_cycles():
 
         update_status(f"Creating comparison graphs for cycles {cycle_list}...")
         for cycle_number in cycle_list:
-            create_cv_graph_compare(cycle_data_dict, [cycle_number], scan_rate, colors.copy(), config_file)  # Use colors.copy() to reset colors each time
+            create_cv_graph_compare(cycle_data_dict, [cycle_number], scan_rate, colors.copy(), config_file)
 
         update_status("Comparison graphs saved successfully.")
 
@@ -252,7 +268,7 @@ def browse_dir():
         output_dir.set(directory)
         update_status(f"Selected output directory: {directory}")
 
-def update_palette_preview(event=None):
+def update_palette_preview(*args):
     color_palette = palette_var.get()
     config = configparser.ConfigParser()
     config.read(config_file)
@@ -278,21 +294,24 @@ def update_palette_preview(event=None):
     for i, color in enumerate(colors):
         preview_canvas.create_rectangle(i * 20, 0, (i + 1) * 20, 20, fill=color, outline="")
 
-
 def choose_start_color():
     color_code = colorchooser.askcolor(title="Choose Start Color")[1]
     if color_code:
         start_color_var.set(color_code)
-
 
 def choose_end_color():
     color_code = colorchooser.askcolor(title="Choose End Color")[1]
     if color_code:
         end_color_var.set(color_code)
 
+def on_closing():
+    update_status("Deleting temporary pickle files...")
+    remove_pickle_files([file_info['path'] for file_info in file_infos])
+    root.destroy()
 
 root = tk.Tk()
 root.title("CV Graph Generator")
+root.protocol("WM_DELETE_WINDOW", on_closing)  # Bind the close window protocol to on_closing
 
 config = configparser.ConfigParser()
 config.read(config_file)
