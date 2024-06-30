@@ -35,6 +35,11 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     axis_line_weight = float(config['DEFAULT']['axislineweight'])
     major_tick_interval = float(config['DEFAULT']['majortickinterval'])
     minor_tick_interval = major_tick_interval / 2
+    width = float(config['DEFAULT']['width'])
+    height = float(config['DEFAULT']['height'])
+    dpi = int(config['DEFAULT']['dpi'])
+    tick_length = float(config['DEFAULT']['ticklength'])
+    tick_width = float(config['DEFAULT']['tickwidth'])
     
     y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
     x_bounds = (x_min, x_max)
@@ -57,12 +62,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     tick_prop = fm.FontProperties(family=font_family, size=tick_font_size)
     legend_prop = fm.FontProperties(family=font_family, size=legend_font_size)
 
-    pixel_width, pixel_height = 6432, 4923
-    fig_ratio = pixel_width / pixel_height
-    fig_height = 8
-    fig_width = fig_height * fig_ratio
-
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    fig, ax = plt.subplots(figsize=(width, height))
 
     # Create a color map for the gradient
     cmap = LinearSegmentedColormap.from_list("custom_gradient", colors)
@@ -82,8 +82,8 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     ax.set_xlabel('Potential / V', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
     ax.set_ylabel(r'Current Density / mA g$^{\mathbf{-1}}$', fontsize=font_size, fontproperties=prop_bold, labelpad=20)
 
-    ax.tick_params(axis='both', which='major', labelsize=tick_font_size)
-    ax.tick_params(axis='both', which='minor', labelsize=tick_font_size)
+    ax.tick_params(axis='both', which='major', labelsize=tick_font_size, length=tick_length, width=tick_width)
+    ax.tick_params(axis='both', which='minor', labelsize=tick_font_size, length=tick_length / 2, width=tick_width)
 
     if len(cycle_list) <= 8:
         ax.legend(loc='upper left', prop=legend_prop, frameon=False)
@@ -127,6 +127,6 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     fig.tight_layout()
 
     output_path = create_unique_filename(output_dir, filename_template, temperature)
-    plt.savefig(output_path, dpi=600)
+    plt.savefig(output_path, dpi=dpi)
     print(f"Graph saved to {output_path}")
     plt.close()

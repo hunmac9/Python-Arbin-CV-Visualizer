@@ -1,6 +1,6 @@
 import pandas as pd
 
-def process_data(channel_data, mass):
+def process_data(channel_data, mass, smoothing_points=8):
     print("Processing channel data...")
     cycle_data = {}
 
@@ -28,9 +28,9 @@ def process_data(channel_data, mass):
         cycle_data[cycle_index]['Current (mA)'].append(current_ma)
         cycle_data[cycle_index]['Current Density (mA g^-1)'].append(current_density)
 
-        if len(cycle_data[cycle_index]['Current (mA)']) >= 8:
-            smoothed_current = sum(cycle_data[cycle_index]['Current (mA)'][-8:]) / 8
-            smoothed_current_density = sum(cycle_data[cycle_index]['Current Density (mA g^-1)'][-8:]) / 8
+        if smoothing_points > 0 and len(cycle_data[cycle_index]['Current (mA)']) >= smoothing_points:
+            smoothed_current = sum(cycle_data[cycle_index]['Current (mA)'][-smoothing_points:]) / smoothing_points
+            smoothed_current_density = sum(cycle_data[cycle_index]['Current Density (mA g^-1)'][-smoothing_points:]) / smoothing_points
         else:
             smoothed_current = current_ma
             smoothed_current_density = current_density
