@@ -65,21 +65,21 @@ def create_graph():
         config = configparser.ConfigParser()
         config.read(config_file)
         
-        x_min = x_min_var.get() if x_min_var.get() != 'auto' else config['DEFAULT']['XAxisMin']
-        x_max = x_max_var.get() if x_max_var.get() != 'auto' else config['DEFAULT']['XAxisMax']
-        y_min = y_min_var.get() if y_min_var.get() != 'auto' else config['DEFAULT']['YAxisMin']
-        y_max = y_max_var.get() if y_max_var.get() != 'auto' else config['DEFAULT']['YAxisMax']
+        x_min = x_min_var.get() if x_min_var.get() != 'auto' else config['DEFAULT']['xaxismin']
+        x_max = x_max_var.get() if x_max_var.get() != 'auto' else config['DEFAULT']['xaxismax']
+        y_min = y_min_var.get() if y_min_var.get() != 'auto' else config['DEFAULT']['yaxismin']
+        y_max = y_max_var.get() if y_max_var.get() != 'auto' else config['DEFAULT']['yaxismax']
         show_grid = grid_var.get()
         
-        config['DEFAULT']['XAxisMin'] = x_min
-        config['DEFAULT']['XAxisMax'] = x_max
-        config['DEFAULT']['YAxisMin'] = y_min
-        config['DEFAULT']['YAxisMax'] = y_max
-        config['DEFAULT']['ShowGrid'] = str(show_grid)
+        config['DEFAULT']['xaxismin'] = x_min
+        config['DEFAULT']['xaxismax'] = x_max
+        config['DEFAULT']['yaxismin'] = y_min
+        config['DEFAULT']['yaxismax'] = y_max
+        config['DEFAULT']['showgrid'] = str(show_grid)
         
         output_directory = output_dir.get()
-        config['DEFAULT']['OutputDirectory'] = output_directory
-        config['DEFAULT']['FilenameTemplate'] = filename_template_var.get()
+        config['DEFAULT']['outputdirectory'] = output_directory
+        config['DEFAULT']['filenametemplate'] = filename_template_var.get()
         
         with open(config_file, 'w') as configfile:
             config.write(configfile)
@@ -157,7 +157,7 @@ tk.Button(root, text="Browse", command=browse_file).grid(row=0, column=2, padx=1
 
 # Output directory selection
 tk.Label(root, text="Output directory:").grid(row=1, column=0, padx=10, pady=5, sticky=tk.W)
-output_dir = tk.StringVar(value=config['DEFAULT']['OutputDirectory'])
+output_dir = tk.StringVar(value=config['DEFAULT']['outputdirectory'])
 tk.Entry(root, textvariable=output_dir, width=50).grid(row=1, column=1, padx=10, pady=5)
 tk.Button(root, text="Browse", command=browse_dir).grid(row=1, column=2, padx=10, pady=5)
 
@@ -192,30 +192,30 @@ tk.Entry(root, textvariable=temp_var).grid(row=5, column=1, padx=10, pady=5)
 
 # X axis bounds input
 tk.Label(root, text="X Axis Min:").grid(row=6, column=0, padx=10, pady=5, sticky=tk.W)
-x_min_var = tk.StringVar(value=config['DEFAULT']['XAxisMin'])
+x_min_var = tk.StringVar(value=config['DEFAULT']['xaxismin'])
 tk.Entry(root, textvariable=x_min_var).grid(row=6, column=1, padx=10, pady=5)
 
 tk.Label(root, text="X Axis Max:").grid(row=7, column=0, padx=10, pady=5, sticky=tk.W)
-x_max_var = tk.StringVar(value=config['DEFAULT']['XAxisMax'])
+x_max_var = tk.StringVar(value=config['DEFAULT']['xaxismax'])
 tk.Entry(root, textvariable=x_max_var).grid(row=7, column=1, padx=10, pady=5)
 
 # Y axis bounds input
 tk.Label(root, text="Y Axis Min:").grid(row=8, column=0, padx=10, pady=5, sticky=tk.W)
-y_min_var = tk.StringVar(value=config['DEFAULT']['YAxisMin'])
+y_min_var = tk.StringVar(value=config['DEFAULT']['yaxismin'])
 tk.Entry(root, textvariable=y_min_var).grid(row=8, column=1, padx=10, pady=5)
 
 tk.Label(root, text="Y Axis Max:").grid(row=9, column=0, padx=10, pady=5, sticky=tk.W)
-y_max_var = tk.StringVar(value=config['DEFAULT']['YAxisMax'])
+y_max_var = tk.StringVar(value=config['DEFAULT']['yaxismax'])
 tk.Entry(root, textvariable=y_max_var).grid(row=9, column=1, padx=10, pady=5)
 
 # Gridlines option
-grid_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('ShowGrid'))
+grid_var = tk.BooleanVar(value=config['DEFAULT'].getboolean('showgrid'))
 grid_checkbox = tk.Checkbutton(root, text="Show Gridlines", variable=grid_var)
 grid_checkbox.grid(row=10, column=0, padx=10, pady=5)
 
 # Filename template input
 tk.Label(root, text="Filename Template:").grid(row=11, column=0, padx=10, pady=5, sticky=tk.W)
-filename_template_var = tk.StringVar(value=config['DEFAULT'].get('FilenameTemplate', '{temperature}_CV-Graph'))
+filename_template_var = tk.StringVar(value=config['DEFAULT'].get('filenametemplate', '{temperature}_CV-Graph'))
 tk.Entry(root, textvariable=filename_template_var).grid(row=11, column=1, padx=10, pady=5)
 
 # Create graph button

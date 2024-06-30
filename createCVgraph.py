@@ -18,18 +18,20 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     config = configparser.ConfigParser()
     config.read(config_file)
     
-    font_family = config['DEFAULT']['FontFamily']
-    font_size = int(config['DEFAULT']['FontSize'])
-    tick_font_size = int(config['DEFAULT']['TickFontSize'])
-    legend_font_size = int(config['DEFAULT']['LegendFontSize'])
-    x_min = float(config['DEFAULT']['XAxisMin'])
-    x_max = float(config['DEFAULT']['XAxisMax'])
-    y_min = config['DEFAULT']['YAxisMin']
-    y_max = config['DEFAULT']['YAxisMax']
-    show_grid = config['DEFAULT'].getboolean('ShowGrid')
-    output_dir = config['DEFAULT']['OutputDirectory']
-    filename_template = config['DEFAULT']['FilenameTemplate']
-
+    font_family = config['DEFAULT']['fontfamily']
+    font_size = int(config['DEFAULT']['fontsize'])
+    tick_font_size = int(config['DEFAULT']['tickfontsize'])
+    legend_font_size = int(config['DEFAULT']['legendfontsize'])
+    x_min = float(config['DEFAULT']['xaxismin'])
+    x_max = float(config['DEFAULT']['xaxismax'])
+    y_min = config['DEFAULT']['yaxismin']
+    y_max = config['DEFAULT']['yaxismax']
+    show_grid = config['DEFAULT'].getboolean('showgrid')
+    output_dir = config['DEFAULT']['outputdirectory']
+    filename_template = config['DEFAULT']['filenametemplate']
+    line_weight = float(config['DEFAULT']['lineweight'])
+    axis_line_weight = float(config['DEFAULT']['axislineweight'])
+    
     y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
     x_bounds = (x_min, x_max)
 
@@ -63,7 +65,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
             data = cycle_data[cycle_index]
             color = colors[idx % len(colors)]
             plt.plot(data['Voltage(V)'], data['Smoothed Current Density (mA g^-1)'],
-                     label=f'Cycle {cycle_index}', color=color)
+                     label=f'Cycle {cycle_index}', color=color, linewidth=line_weight)
         else:
             print(f"Cycle {cycle_index} not found in data.")
 
@@ -92,6 +94,12 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, conf
     plt.gca().xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
     plt.gca().yaxis.set_major_locator(ticker.MultipleLocator(50))
     plt.gca().yaxis.set_minor_locator(ticker.MultipleLocator(25))
+
+    # Set axis line weight
+    plt.gca().spines['top'].set_linewidth(axis_line_weight)
+    plt.gca().spines['bottom'].set_linewidth(axis_line_weight)
+    plt.gca().spines['left'].set_linewidth(axis_line_weight)
+    plt.gca().spines['right'].set_linewidth(axis_line_weight)
 
     if show_grid:
         plt.grid(True, which='both', linestyle='--', linewidth=0.5)
