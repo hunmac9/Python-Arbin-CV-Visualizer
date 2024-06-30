@@ -5,7 +5,16 @@ import os
 import matplotlib.ticker as ticker
 import configparser
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palette, config_file):
+def create_unique_filename(directory, filename_template, temperature):
+    base_filename = filename_template.format(temperature=temperature)
+    filename = f"{base_filename}.png"
+    counter = 1
+    while os.path.exists(os.path.join(directory, filename)):
+        filename = f"{base_filename}_{counter}.png"
+        counter += 1
+    return os.path.join(directory, filename)
+
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, config_file):
     config = configparser.ConfigParser()
     config.read(config_file)
     
@@ -19,20 +28,22 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
     y_max = config['DEFAULT']['YAxisMax']
     show_grid = config['DEFAULT'].getboolean('ShowGrid')
     output_dir = config['DEFAULT']['OutputDirectory']
+    filename_template = config['DEFAULT']['FilenameTemplate']
 
     y_bounds = (float(y_min), float(y_max)) if y_min != 'auto' and y_max != 'auto' else None
     x_bounds = (x_min, x_max)
 
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
     print(f"Creating CV graphs for temperature: {temperature}")
 
-    palettes = {
-        'Default': ['#1b2c2d', '#083c40', '#266E70', '#3C8D8E', '#5BB8BD', '#7DE4E6'],
-        'Palette 1': ['#003f5c', '#2f4b7c', '#665191', '#a05195', '#d45087', '#f95d6a'],
-        'Palette 2': ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c', '#d90429', '#fff000'],
-        'Palette 3': ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
-    }
-
-    colors = cycle(palettes[color_palette])
+    # Check and log colors
+    if not colors:
+        raise ValueError("No colors provided for plotting.")
+    for idx, color in enumerate(colors):
+        if not isinstance(color, str) or not color.startswith('#'):
+            raise ValueError(f"Invalid color value at index {idx}: {color}")
 
     # Load the Arial font
     prop_bold = fm.FontProperties(family=font_family, size=font_size, weight='bold')
@@ -47,10 +58,10 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     plt.figure(figsize=(fig_width, fig_height))
 
-    for cycle_index in cycle_list:
+    for idx, cycle_index in enumerate(cycle_list):
         if cycle_index in cycle_data:
             data = cycle_data[cycle_index]
-            color = next(colors)
+            color = colors[idx % len(colors)]
             plt.plot(data['Voltage(V)'], data['Smoothed Current Density (mA g^-1)'],
                      label=f'Cycle {cycle_index}', color=color)
         else:
@@ -64,7 +75,9 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     plt.legend(loc='upper left', prop=legend_prop, frameon=False)
 
-    plt.text(0.03, 0.03, f'${scan_rate} \\mathrm{{mV}} \\ \\mathrm{{s}}^{{-1}}$', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold)
+    # Add scan rate without bold superscript
+    scan_rate_text = f'${scan_rate} \\mathrm{{mV}} \\ \\mathrm{{s}}^{{-1}}$'
+    plt.text(0.03, 0.03, scan_rate_text, transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_regular)
 
     if temperature != 'auto':
         plt.text(0.97, 0.03, f'{temperature}', transform=plt.gca().transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
@@ -87,7 +100,7 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, color_palett
 
     plt.tight_layout()
 
-    output_path = f'{output_dir}/{temperature}_CV-Graph.png'
+    output_path = create_unique_filename(output_dir, filename_template, temperature)
     plt.savefig(output_path, dpi=600)
     print(f"Graph saved to {output_path}")
     plt.close()
