@@ -8,7 +8,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import re
 
-def create_unique_filename(directory, filename_template, temperature, cycle_list, cycle_number=None):
+def create_unique_filename(directory, filename_template, temperature, cycle_number=None):
     base_filename = filename_template.format(temperature=temperature)
     if cycle_number is not None:
         base_filename += f"_Cycle{cycle_number}"
