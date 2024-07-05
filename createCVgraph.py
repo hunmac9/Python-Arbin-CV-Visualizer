@@ -6,8 +6,9 @@ import matplotlib.ticker as ticker
 import configparser
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
+import re
 
-def create_unique_filename(directory, filename_template, temperature, cycle_number=None):
+def create_unique_filename(directory, filename_template, temperature, cycle_list, cycle_number=None):
     base_filename = filename_template.format(temperature=temperature)
     if cycle_number is not None:
         base_filename += f"_Cycle{cycle_number}"
@@ -18,7 +19,17 @@ def create_unique_filename(directory, filename_template, temperature, cycle_numb
         counter += 1
     return os.path.join(directory, filename)
 
-def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, graph_params):
+def extract_run_from_filename(filename):
+    match = re.search(r'Run(\d+)', filename)
+    return f"Run {match.group(1)}" if match else None
+
+def parse_temperature_key(temp):
+    temp_parts = temp.split(" - ")
+    temperature = re.findall(r'\d+', temp_parts[0])[0]
+    run = temp_parts[1].split()[1] if len(temp_parts) > 1 else 0
+    return int(temperature), int(run)
+
+def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, graph_params, run_info=None):
     # Use values from graph_params
     font_family = graph_params["font_family"]
     font_size = graph_params["font_size"]
@@ -91,8 +102,8 @@ def create_cv_graph(cycle_data, temperature, scan_rate, cycle_list, colors, grap
     scan_rate_text = f'${scan_rate} \\ \\mathrm{{mV}} \\ \\mathrm{{s}}^{{-1}}$'
     ax.text(0.03, 0.03, scan_rate_text, transform=ax.transAxes, fontsize=font_size, fontproperties=prop_regular)
 
-    if temperature != 'auto':
-        ax.text(0.97, 0.03, f'{temperature}', transform=ax.transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
+    temp_label = temperature if run_info is None else f'{temperature} - {run_info}'
+    ax.text(0.97, 0.03, f'{temp_label}', transform=ax.transAxes, fontsize=font_size, fontproperties=prop_bold, horizontalalignment='right')
 
     ax.set_xlim(x_bounds)
     if y_bounds:
@@ -169,7 +180,8 @@ def create_cv_graph_compare(cycle_data_dict, cycle_list, scan_rate, colors, grap
 
         fig, ax = plt.subplots(figsize=(width, height))
 
-        sorted_temps = sorted(cycle_data_dict.keys(), key=lambda x: float(x.rstrip('°C')))
+        # Adjust sorting so that temperatures with runs are handled properly
+        sorted_temps = sorted(cycle_data_dict.keys(), key=lambda x: parse_temperature_key(x))
         color_cycle = cycle(colors)
         
         for temperature in sorted_temps:
@@ -177,8 +189,11 @@ def create_cv_graph_compare(cycle_data_dict, cycle_list, scan_rate, colors, grap
             if cycle_number in cycle_data:
                 data = cycle_data[cycle_number]
                 color = next(color_cycle)
+
+                run_info = extract_run_from_filename(cycle_data["filename"])
+                temp_label = temperature  # temperature string already includes run info if applicable
                 ax.plot(data['Voltage(V)'], data['Smoothed Current Density (mA g^-1)'],
-                        label=f'{temperature}', color=color, linewidth=line_weight)
+                        label=f'{temp_label}', color=color, linewidth=line_weight)
             else:
                 print(f"Cycle {cycle_number} not found in data for temperature {temperature}.")
 

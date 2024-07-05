@@ -33,7 +33,7 @@ def smooth_data(data, smoothing_points):
     smoothed_data = savgol_filter(data, smoothing_points, polyorder=3)  # You can adjust polyorder as needed
     return smoothed_data.tolist()
 
-def process_data(channel_data, mass, smoothing_points):
+def process_data(channel_data, mass, smoothing_points, filename):
     logging.info("Processing channel data...")
 
     cycle_data = {}
@@ -89,6 +89,9 @@ def process_data(channel_data, mass, smoothing_points):
 
     # Store the smoothing points used for processing
     cycle_data['smoothing_points'] = smoothing_points
+
+    # Store the filename
+    cycle_data['filename'] = filename
 
     logging.info("Channel data processing complete.")
 

@@ -9,7 +9,7 @@ import webbrowser
 import time
 from loadExcel import load_excel_data, parse_temperature_from_filename
 from processExcel import process_data, store_processed_data, load_processed_data
-from createCVgraph import create_cv_graph, create_cv_graph_compare
+from createCVgraph import create_cv_graph, create_cv_graph_compare, extract_run_from_filename
 from genColors import generate_gradient_colors
 
 # Set up logging
@@ -115,7 +115,7 @@ def create_graph():
                 channel_data, _, temp_auto = load_excel_data(file_path)
 
                 update_status("Processing data...")
-                cycle_data = process_data(channel_data, mass, smoothing_points)
+                cycle_data = process_data(channel_data, mass, smoothing_points, file_path)
                 # Store the smoothing points used for processing
                 cycle_data['smoothing_points'] = smoothing_points
                 store_processed_data(cycle_data, pickle_filename)
@@ -160,8 +160,9 @@ def create_graph():
                 "tick_width": float(config['DEFAULT']['tickwidth']),
             }
 
+            run_info = extract_run_from_filename(file_path)
             update_status(f"Creating CV graph for {file_path}...")
-            create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, graph_params)
+            create_cv_graph(cycle_data, temp, scan_rate, cycle_list, colors, graph_params, run_info)
             update_status(f"Graph saved successfully to {output_directory}")
 
             filename = filename_template.format(temperature=temp) + ".png"
@@ -215,12 +216,23 @@ def compare_cycles():
                 channel_data, _, temp_auto = load_excel_data(file_path)
 
                 update_status("Processing data...")
-                cycle_data = process_data(channel_data, mass, smoothing_points)
+                cycle_data = process_data(channel_data, mass, smoothing_points, file_path)
                 # Store the smoothing points used for processing
                 cycle_data['smoothing_points'] = smoothing_points
                 store_processed_data(cycle_data, pickle_filename)
 
-            cycle_data_dict[temperature] = cycle_data
+            cycle_data['filename'] = file_path
+            run_info = extract_run_from_filename(file_path)
+            if run_info:
+                temperature = f"{temperature} - {run_info}"
+
+            if temperature not in cycle_data_dict:
+                cycle_data_dict[temperature] = cycle_data
+            else:
+                for key in cycle_data_dict[temperature]:
+                    if key != 'smoothing_points' and key != 'filename':
+                        cycle_data_dict[temperature][key].extend(cycle_data[key])
+                        
             update_status(f"Cycle data has been loaded for temperature: {temperature}")
 
         color_palette = palette_var.get()
